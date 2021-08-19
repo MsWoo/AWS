@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>단축URL 생성기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+
+  <style>
+    .form {
+      text-align: center;
+      width: 400px;
+      height: 500;
+      padding-top: 120px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .title {
+      font-size: 50px;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .form {
+      margin-left: auto;
+      margin-right: auto;
+      height: auto;
+      width: auto;
+    }
+
+    .result {
+      align-items: center;
+    }
+
+    .copy-button {
+      float: right
+    }
+  </style>
+</head>
+
+<body>
+  <section class="section">
+    <h1 class="title">단축 URL 생성 사이트</h1>
+  </section>
+
+  <div class="container">
+    <div id="form" class="field has-addons">
+      <input style="height:60px" class="input" type="text" placeholder="단축할 URL을 입력하세요. (예: https://hufs.ac.kr)">
+      <button style="width:15%;height:60px;" id="generate-button" class="button is-primary">줄이기</button>
+    </div>
+
+    <div hidden id="success-card" class="notification is-link is-light">
+      <span style="float:left;" id="result">sdsdsdsd</span>
+      <button id="copy-button" class="button is-link">복사</button>
+    </div>
+  </div>
+
+  <div hidden id="fail-card" class="notification is-warning is-light">
+    <span>URL 형식이 올바르지 않습니다. https:// 혹은 http:// 를 붙여서 작성해주세요</span>
+  </div>
+</body>
+
+<script>
+
+  let origin_endpoint = "https://9fwbsqtw67.execute-api.ap-northeast-2.amazonaws.com/default";
+  
+  document.getElementById('generate-button').addEventListener('click', () => {
+    let native_url = document.getElementsByClassName("input")[0].value;
+
+    if (isNotValidURL(native_url)) {
+      document.getElementById("success-card").style.display = 'none'
+      document.getElementById("fail-card").style.display = 'block'
+      return;
+    }
+
+    fetch(origin_endpoint, {
+      method: 'POST',
+      header: {
+        'Access-Control-Allow-Origin': '*',
+        'origin': origin_endpoint
+      },
+      body: JSON.stringify({ native_url: native_url })
+    }).then(response => {
+      return response.json();
+    }).then(data => {
+      if (data.short_id == null) {
+
+      } else {
+        document.getElementById("fail-card").style.display = 'none'
+        document.getElementById("success-card").style.display = 'block'
+        let shorten_url = data.forward_url + "/" + data.short_id
+        document.getElementById("result").innerHTML =
+          "<a href='" + shorten_url + "'>" + shorten_url + "</a>"
+      }
+    }).catch(err => {
+      console.log(err)
+    })
+  });
+
+  document.getElementById('copy-button').addEventListener('click', async () => {
+    let copyText = document.getElementById("result").innerText
+    await navigator.clipboard.writeText(copyText);
+  })
+
+  function isNotValidURL(str) {
+    let pattern = new RegExp(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi);
+    return !pattern.test(str);
+  }
+</script>
+</html>
